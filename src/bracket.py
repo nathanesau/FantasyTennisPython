@@ -77,6 +77,7 @@ class BracketNode(QWidget):
         self.groupBoxLayout.setAlignment(Qt.AlignBottom)
         self.groupBoxLayout.addWidget(self.playerOneNode)
         self.groupBoxLayout.addWidget(self.playerTwoNode)
+        self.groupBoxLayout.setSizeConstraint(QLayout.SetMinimumSize);
         self.groupBoxLayout.addStretch(1)
 
         self.groupBox = QGroupBox()
@@ -104,21 +105,26 @@ class BracketNode(QWidget):
 
 
 class RoundBracket(QWidget):
-    def __init__(self, bracketNodeList, roundNum, parent=None):
+    def __init__(self, bracketNodeList, roundNum, mainWindow, parent=None):
         super().__init__(parent)
-
         self.bracketNodes = bracketNodeList
+        self.roundNum = roundNum
+        self.mainWindow = mainWindow
 
-        self.title = QLabel()
+        self.title = QRightClickButton()
         self.title.setText("Round " + str(roundNum))
+        self.title.clicked.connect(self.onTitleClicked)
 
         self.mainLayout = QVBoxLayout()
         self.mainLayout.setSpacing(0)
         self.mainLayout.addWidget(self.title)
         for bracketNode in self.bracketNodes:
             self.mainLayout.addWidget(bracketNode)
-
+        self.mainLayout.setSizeConstraint(QLayout.SetMinimumSize);
         self.setLayout(self.mainLayout)
+
+    def onTitleClicked(self):
+        self.mainWindow.hideRoundBracket(self.roundNum)
 
 
 class Bracket(QWidget):
@@ -132,4 +138,5 @@ class Bracket(QWidget):
         for roundBracket in self.roundBrackets:
             self.mainLayout.addWidget(roundBracket)
 
+        self.mainLayout.setSizeConstraint(QLayout.SetMinimumSize);
         self.setLayout(self.mainLayout)

@@ -1,4 +1,3 @@
-# modified
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import qrc_resources  # pyrcc5 resources.qrc -o qrc_resources.py

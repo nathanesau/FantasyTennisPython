@@ -1,0 +1,47 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file alias="icon.png">images/icon.png</file>
+        <file alias="arg.svg">images/arg.svg</file>
+        <file alias="aus.svg">images/aus.svg</file>
+        <file alias="aut.svg">images/aut.svg</file>
+        <file alias="bel.svg">images/bel.svg</file>
+        <file alias="bul.svg">images/bul.svg</file>
+        <file alias="blr.svg">images/blr.svg</file>
+        <file alias="can.svg">images/can.svg</file>
+        <file alias="chi.svg">images/chi.svg</file>
+        <file alias="cro.svg">images/cro.svg</file>
+        <file alias="esp.svg">images/esp.svg</file>
+        <file alias="fra.svg">images/fra.svg</file>
+        <file alias="gbr.svg">images/gbr.svg</file>
+        <file alias="geo.svg">images/geo.svg</file>
+        <file alias="ger.svg">images/ger.svg</file>
+        <file alias="gre.svg">images/gre.svg</file>
+        <file alias="hun.svg">images/hun.svg</file>
+        <file alias="ita.svg">images/ita.svg</file>
+        <file alias="jpn.svg">images/jpn.svg</file>
+        <file alias="mda.svg">images/mda.svg</file>
+        <file alias="kaz.svg">images/kaz.svg</file>
+        <file alias="kor.svg">images/kor.svg</file>
+        <file alias="pol.svg">images/pol.svg</file>
+        <file alias="rus.svg">images/rus.svg</file>
+        <file alias="srb.svg">images/srb.svg</file>
+        <file alias="sui.svg">images/sui.svg</file>
+        <file alias="usa.svg">images/usa.svg</file>
+        <file alias="cze.svg">images/cze.svg</file>
+        <file alias="bol.svg">images/bol.svg</file>
+        <file alias="ind.svg">images/ind.svg</file>
+        <file alias="bih.svg">images/bih.svg</file>
+        <file alias="ltu.svg">images/ltu.svg</file>
+        <file alias="uru.svg">images/uru.svg</file>
+        <file alias="bra.svg">images/bra.svg</file>
+        <file alias="por.svg">images/por.svg</file>
+        <file alias="rou.svg">images/rou.svg</file>
+        <file alias="col.svg">images/col.svg</file>
+        <file alias="svk.svg">images/svk.svg</file>
+        <file alias="slo.svg">images/slo.svg</file>
+        <file alias="ned.svg">images/ned.svg</file>
+        <file alias="rsa.svg">images/rsa.svg</file>
+        <file alias="nor.svg">images/nor.svg</file>
+    </qresource>
+</RCC>

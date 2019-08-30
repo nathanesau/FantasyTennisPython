@@ -4,7 +4,6 @@ from PyQt5.QtGui import *
 import qrc_resources  # pyrcc5 resources.qrc -o qrc_resources.py
 import os.path
 import math
-import copy
 
 from bracket import *
 from database import *

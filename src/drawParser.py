@@ -9,13 +9,15 @@ workspace_dir = os.path.dirname(os.path.realpath(__file__))
 
 # inputFName: html input
 # outputFName: db output
+
+
 def html_to_db(inputFName, outputFName):
     soup = BeautifulSoup(open(inputFName), "html.parser")
 
     # parsing outputs
-    seedDict = {} # key : player, value : seed
+    seedDict = {}  # key : player, value : seed
     countryDict = {}  # key : player, value : country_image
-    numWinsDict = {} # key : player, value: numWins
+    numWinsDict = {}  # key : player, value: numWins
     round1_players = []
     win_players = []
 
@@ -26,7 +28,7 @@ def html_to_db(inputFName, outputFName):
             for tr_tag in tr_tags:
                 span_tags = tr_tag.find_all('span')
                 a_tags = tr_tag.find_all('a')
-                if len(a_tags) > 0: # player info exists
+                if len(a_tags) > 0:  # player info exists
                     playerName = a_tags[0]['data-ga-label']
                     img_tags = tr_tag.find_all('img')
                     if len(img_tags) > 0:
@@ -42,19 +44,12 @@ def html_to_db(inputFName, outputFName):
                     seed = span_tags[0]
                     if seed:
                         seed_str = str(seed).strip()
-                        seed_str = seed_str.replace('\n', '')
-                        seed_str = seed_str.replace('\t', '')
-                        seed_str = seed_str.replace('<', '')
-                        seed_str = seed_str.replace('>', '')
-                        seed_str = seed_str.replace('span', '')
-                        seed_str = seed_str.replace('\\', '')
-                        seed_str = seed_str.replace('/', '')
-                        seed_str = seed_str.replace('(', '')
-                        seed_str = seed_str.replace(')', '')
+                        for substr in ['\n', '\t', '<', '>', 'span', '\\', '/', '(', ')']:
+                            seed_str = seed_str.replace(substr, '')
                         seedDict[playerName] = seed_str
         else:  # round 2, 3, ..., entry
             a_tags = box.find_all('a')
-            if len(a_tags) > 0: # only true if match has happened
+            if len(a_tags) > 0:  # only true if match has happened
                 playerName = a_tags[0]['data-ga-label']
                 win_players.append(playerName)
             else:
@@ -66,67 +61,49 @@ def html_to_db(inputFName, outputFName):
     numRounds = int(math.log(drawSize)/math.log(2)) + 1
     rounds = [[] for i in range(numRounds)]
 
-    # round1
-    for i in range(0, drawSize, 2):
+    for i in range(0, drawSize, 2):  # round1
         rounds[0].append((round1_players[i], round1_players[i+1]))
 
-    # (fill numWinsDict)
-    for player in round1_players:
+    for player in round1_players:  # numWinsDict
         numWinsDict[player] = win_players.count(player)
 
-    # round2, ...
-    num_players_last_round = drawSize
-    for roundNum in range(1, numRounds, 1):
-        num_players_this_round = int(num_players_last_round / 2)
-        # fill round[roundNum]
+    def get_winner(pair, roundNum, numWinsDict):
+        player1 = pair[0]
+        player2 = pair[1]
+        num_wins1 = 0 if player1 not in numWinsDict else numWinsDict[player1]
+        num_wins2 = 0 if player2 not in numWinsDict else numWinsDict[player2]
+        return player1 if num_wins1 >= roundNum else player2 if num_wins2 >= roundNum else "unknown"
+
+    num_players_this_round = drawSize
+    for roundNum in range(1, numRounds, 1):  # round2, ...
+        num_players_this_round = int(num_players_this_round / 2)
         if num_players_this_round > 1:
             for i in range(0, num_players_this_round, 2):
-                pair1 = rounds[roundNum-1][i] # from prev_round
-                pair2 = rounds[roundNum-1][i+1] # from prev_round
-                # determine winning player from pair 1
-                player1 = pair1[0]
-                player2 = pair1[1]
-                num_wins1 = 0 if player1 not in numWinsDict else numWinsDict[player1]
-                num_wins2 = 0 if player2 not in numWinsDict else numWinsDict[player2]
-                winning_player1 = player1 if num_wins1 >= roundNum else player2 if num_wins2 >= roundNum else "unknown"
-                # determine winning player from pair 2
-                player1 = pair2[0]
-                player2 = pair2[1]
-                num_wins1 = 0 if player1 not in numWinsDict else numWinsDict[player1]
-                num_wins2 = 0 if player2 not in numWinsDict else numWinsDict[player2]
-                winning_player2 = player1 if num_wins1 >= roundNum else player2 if num_wins2 >= roundNum else "unknown"
-                rounds[roundNum].append((winning_player1, winning_player2))
-        else: # last round
-            pair = rounds[roundNum-1][0]
-            player1 = pair[0]
-            player2 = pair[1]
-            num_wins1 = 0 if player1 not in numWinsDict else numWinsDict[player1]
-            num_wins2 = 0 if player2 not in numWinsDict else numWinsDict[player2]
-            winning_player = player1 if num_wins1 >= roundNum else player2 if num_wins2 >= roundNum else "unknown"
-            rounds[roundNum].append((winning_player))
-        # endfill
-        num_players_last_round = num_players_this_round
+                w1 = get_winner(rounds[roundNum-1][i], roundNum, numWinsDict)
+                w2 = get_winner(rounds[roundNum-1][i+1], roundNum, numWinsDict)
+                rounds[roundNum].append((w1, w2))
+        else:  # last round
+            w = get_winner(rounds[roundNum-1][0], roundNum, numWinsDict)
+            rounds[roundNum].append((w))
 
     db = TennisDatabase()
 
     drawRowList = []
-    for roundNum in range(0, numRounds, 1):
+    for roundNum in range(0, numRounds, 1):  # drawRowList
         if roundNum != (numRounds - 1):
             for i in range(0, len(rounds[roundNum]), 1):
-                drawRowList.append([roundNum+1, rounds[roundNum][i][0], rounds[roundNum][i][1]])
-        else: # final round
-            drawRowList.append([roundNum+1, rounds[roundNum][0], ""])
-        
-    playerRowList = []
+                p1 = rounds[roundNum][i][0]
+                p2 = rounds[roundNum][i][1]
+                drawRowList.append([roundNum+1, p1, p2])
+        else:  # final round
+            p = rounds[roundNum][0]
+            drawRowList.append([roundNum+1, p, ""])
 
+    playerRowList = []
     for player in round1_players:
         seed = 0 if player not in seedDict else seedDict[player]
         country = "" if player not in countryDict else countryDict[player]
-        playerRowList.append([player, seed, country]) # country is similar to url, parsed later
+        playerRowList.append([player, seed, country])  # country parsed later
 
     tennisData = TennisData(drawRowList, playerRowList)
     db.SaveToDb(outputFName, tennisData)
-
-if __name__ == "__main__":
-    #html_to_db(workspace_dir + "/html_data/us_open_draw.html", workspace_dir + "/data/usopen.db")
-    html_to_db(workspace_dir + "/html_data/rogers_cup_draw.html", workspace_dir + "/data/rogers_cup_draw.db")

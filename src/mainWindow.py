@@ -2,26 +2,20 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import qrc_resources  # pyrcc5 resources.qrc -o qrc_resources.py
 import os.path
+import math
 
 from bracket import *
 from database import *
 from loadBracketDialog import *
 from convertHtmlDialog import *
+from loadPredictionsDialog import *
 from drawParser import *
+from data import *
 
 data_dir = os.path.dirname(os.path.realpath(__file__)) + "/data/"
 html_dir = os.path.dirname(os.path.realpath(__file__)) + "/html_data/"
+custom_dir = os.path.dirname(os.path.realpath(__file__)) + "/custom_data/"
 
-class PlayerNodeData:
-    def __init__(self, name, seed, country):
-        self.name = name
-        self.seed = seed
-        self.country = country
-
-class BracketNodeData:
-    def __init__(self, playerOneNodeData, playerTwoNodeData):
-        self.playerOneNodeData = playerOneNodeData
-        self.playerTwoNodeData = playerTwoNodeData
 
 class MainWindow(QMainWindow):
     def setupActions(self):
@@ -51,37 +45,12 @@ class MainWindow(QMainWindow):
 
         self.setupActions()
         self.setupMenus()
-
-        #
-        #node1Data = BracketNodeData(playerOneData, playerTwoData)
-        #node1 = BracketNode(node1Data)
-        #node2Data = BracketNodeData(playerThreeData, playerFourData)
-        #node2 = BracketNode(node2Data)
-        #node3Data = BracketNodeData(playerOneData, playerThreeData)
-        #node3 = BracketNode(node3Data)
-        #
-        # temp code
-        #node4Data = node1Data
-        #node5Data = node1Data
-        #node6Data = node1Data
-        #node7Data = node1Data
-        #node8Data = node1Data
-        #node9Data = node1Data
-        #
-        #node4 = BracketNode(node4Data)
-        #node5 = BracketNode(node5Data)
-        #node6 = BracketNode(node6Data)
-        #node7 = BracketNode(node7Data)
-        #node8 = BracketNode(node8Data)
-        #node9 = BracketNode(node9Data)
-        #
-        #round1Bracket = RoundBracket([node1, node2, node4, node5, node6, node7, node8, node9])
-        #round2Bracket = RoundBracket([node3, node4, node5, node6])
-        #round3Bracket = RoundBracket([node3, node4])
-        #self.bracket = Bracket([round1Bracket, round2Bracket, round3Bracket])
-
         self.scrollArea = QScrollArea()
-        #self.scrollArea.setWidget(self.bracket)
+
+        instructionLabel = QLabel()
+        instructionLabel.setText("Load a bracket to get started...")
+        self.scrollArea.setWidget(instructionLabel)
+        self.scrollArea.setAlignment(Qt.AlignCenter)
 
         self.setCentralWidget(self.scrollArea)
         self.setWindowTitle("Fantasy Tennis")
@@ -89,75 +58,127 @@ class MainWindow(QMainWindow):
         self.resize(600, 600)
 
     def onConvertHTMLToDB(self):
-
         convertHTMLDlg = ConvertHTMLDialog()
-        result = convertHTMLDlg.exec()
 
-        html_to_db(html_dir + "wimbledon_draw.html", data_dir + "wimbledon_draw.db")
+        if not convertHTMLDlg.exec():  # reject
+            return
 
-    def onLoadBracket(self):
-        
-        loadBracketDlg = LoadBracketDialog()
-        result = loadBracketDlg.exec()
+        html_file = convertHTMLDlg.fileComboBox.currentText()
+        db_file = html_file.replace(".html", ".db")
+        html_to_db(html_dir + html_file, data_dir + db_file)
 
-        tennisData = TennisData([], [])
-        db = TennisDatabase()
-        db.LoadFromDb(data_dir + "wimbledon_draw.db", tennisData)
+        msgBox = QMessageBox()
+        msgBox.setWindowTitle("Convert HTML to DB finished")
+        msgBox.setText("HTML file converted. The bracket can now be loaded")
+        msgBox.setWindowIcon(QIcon(":icon.png"))
+        msgBox.exec()
 
-        # fill tennisData.drawRowList (round 3 = 32, 4 = 16, 5 = 8, 6 = 4, 7 = 2, 8 = 1)
-        #tennisData.drawRowList.extend([[3, "unknown", "unknown"] for i in range(32)]) # 3
-        #tennisData.drawRowList.extend([[4, "unknown", "unknown"] for i in range(16)]) # 4
-        #tennisData.drawRowList.extend([[5, "unknown", "unknown"] for i in range(8)]) # 5
-        #tennisData.drawRowList.extend([[6, "unknown", "unknown"] for i in range(4)]) # 6 
-        #tennisData.drawRowList.extend([[7, "unknown", "unknown"] for i in range(2)])# 7
-        #tennisData.drawRowList.extend([[8, "unknown", "unknown"] for i in range(1)]) # 8
-
+    def showData(self, tennisData):
         seedDict = {}
         countryDict = {}
         for row in tennisData.playerRowList:
-            player = row[0]
-            seed = row[1]
-            country = row[2]
-            seedDict[player] = seed 
+            player, seed, country = row[0], row[1], row[2]
+            seedDict[player] = seed
             countryDict[player] = country
 
-        bracketNodes = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]}
+        round1Rows = []
         for row in tennisData.drawRowList:
-            round = row[0]
-            player1 = row[1]
-            player2 = row[2]
-            seed1 = '0'
-            seed2 = '0'
-            country1 = ""
-            country2 = ""
-            if player1 in seedDict:
-                seed1 = seedDict[player1]
-            if player2 in seedDict:
-                seed2 = seedDict[player2]
-            if player1 in countryDict:
-                country1 = countryDict[player1]
-            if player2 in countryDict:
-                country2 = countryDict[player2]
-            nodeData = BracketNodeData(PlayerNodeData(player1, seed1, country1), PlayerNodeData(player2, seed2, country2))
-            bracketNodes[round].append(BracketNode(nodeData, False))
+            roundNum = row[0]
+            if roundNum == 1:
+                round1Rows.append(row)
 
-        round1Bracket = RoundBracket(bracketNodes[1], 1)
-        round2Bracket = RoundBracket(bracketNodes[2], 2)
-        round3Bracket = RoundBracket(bracketNodes[3], 3)
-        round4Bracket = RoundBracket(bracketNodes[4], 4)
-        round5Bracket = RoundBracket(bracketNodes[5], 5)
-        round6Bracket = RoundBracket(bracketNodes[6], 6)
-        round7Bracket = RoundBracket(bracketNodes[7], 7)
-        self.bracket = Bracket([round1Bracket, round2Bracket, round3Bracket, round4Bracket, round5Bracket, round6Bracket, round7Bracket])
+        drawSize = len(round1Rows)
+        numRounds = int(math.log(drawSize)/math.log(2)) + 1
+
+        bracketNodes = {}
+        for roundNum in range(0, numRounds, 1):
+            bracketNodes[roundNum+1] = []
+
+        for row in tennisData.drawRowList:
+            roundNum, player1, player2 = row[0], row[1], row[2]
+            if roundNum <= numRounds:
+                seed1 = '0' if not player1 in seedDict else seedDict[player1]
+                seed2 = '0' if not player2 in seedDict else seedDict[player2]
+                country1 = "" if not player1 in countryDict else countryDict[player1]
+                country2 = "" if not player2 in countryDict else countryDict[player2]
+                d1 = PlayerNodeData(player1, seed1, country1)
+                d2 = PlayerNodeData(player2, seed2, country2)
+                nodeData = BracketNodeData(d1, d2)
+                node = BracketNode(nodeData, roundNum, False, self)
+                bracketNodes[roundNum].append(node)
+
+        roundBrackets = []
+        for key in bracketNodes.keys():
+            roundBrackets.append(RoundBracket(bracketNodes[key], key))
+
+        self.bracket = Bracket(roundBrackets)
         self.scrollArea.setWidget(self.bracket)
-        
-        self.setWindowTitle("Fantasy Tennis (usopen2019.db)")
+
+    def onLoadBracket(self):
+        loadBracketDlg = LoadBracketDialog()
+
+        if not loadBracketDlg.exec():  # reject
+            return
+
+        tennisData = TennisData([], [])
+        db = TennisDatabase()
+        db_file = loadBracketDlg.fileComboBox.currentText()
+        db.LoadFromDb(data_dir + db_file, tennisData)
+        self.showData(tennisData)
+        self.setWindowTitle("Fantasy Tennis " + "(" + db_file + ")")
+
+    # data: BracketNodeData which was modified
+    # winner: PlayerNodeData which won the match
+    def updateBracket(self, data, winner, opponent, currRoundNum):
+        roundBrackets = self.bracket.roundBrackets  # [0]: round1, ...
+        numRounds = len(roundBrackets)
+        indexDict = {} # indices to update for each round
+
+        for roundNum in range(1, numRounds+1, 1):
+            indexDict[roundNum] = {}
+
+        currRoundBracket = roundBrackets[currRoundNum - 1]
+        for i in range(len(currRoundBracket.bracketNodes)):
+            bracketNode = currRoundBracket.bracketNodes[i]
+            if bracketNode.data == data:
+                indexDict[currRoundNum] = int(i + 1)
+                break
+
+        # calculate affected indices mathematically
+        for roundNum in range(currRoundNum+1, numRounds+1, 1):
+            x = indexDict[roundNum-1]
+            y = x if x % 2 == 0 else x + 1
+            indexDict[roundNum] = int(y / 2)
+
+        for roundNum in range(currRoundNum+1, numRounds+1, 1):
+            roundBracket = roundBrackets[roundNum-1]
+            roundBracketNodes = roundBracket.bracketNodes
+            index = indexDict[roundNum]
+            prev_index = indexDict[roundNum-1]
+            bracketNode = roundBracketNodes[index-1]
+            top = prev_index % 2 != 0 # top of bracket if prev_index is odd
+            playerNode = bracketNode.playerOneNode if top else bracketNode.playerTwoNode
+            bracketData = bracketNode.data.playerOneNodeData if top else bracketNode.data.playerTwoNodeData
+            if playerNode.data.name != winner.name: 
+                if playerNode.data.name == opponent.name: # update needed
+                    playerNode.update(winner, True)
+                    if top:
+                        bracketNode.data.playerOneNodeData = winner
+                    else:
+                        bracketNode.data.playerTwoNodeData = winner
+                        
+        self.bracket.repaint()
 
     def onResetPred(self):
-        x = 5
+        pass
 
     def onSavePred(self):
-        x = 10
+        pass
 
     def onLoadPred(self):
-        x = 12
+        loadPredictionsDlg = LoadPredictionsDialog()
+
+        if not loadPredictionsDlg.exec():  # reject
+            return
+
+        x = 5  # todo

@@ -6,58 +6,70 @@ import qrc_resources
 
 
 class QRightClickButton(QPushButton):
+    clicked = pyqtSignal()
     rightClicked = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-    
+
     def mousePressEvent(self, event):
         if event.button() == Qt.RightButton:
             self.rightClicked.emit()
+        elif event.button() == Qt.LeftButton:
+            self.clicked.emit()
 
 
 class PlayerNode(QWidget):
     clicked = pyqtSignal()
     rightClicked = pyqtSignal()
 
-    def __init__(self, data, parent=None):
-        super().__init__(parent)
-        self.nameSeedLabel = QRightClickButton()
+    def update(self, data, isPrediction):
+        self.data = data
+        self.isPrediction = isPrediction
+        
         if data.country.rfind('/') > 0:
             ico_file = data.country[data.country.rfind('/')+1:]
             self.nameSeedLabel.setIcon(QIcon(":"+ico_file))
-        #self.nameSeedLabel.setIcon(QIcon(":icon.png"))
         if data.seed != '0':
-            self.nameSeedLabel.setText(data.name + " " + "(" + str(data.seed) + ")")
+            text = data.name + " " + "(" + str(data.seed) + ")"
+            self.nameSeedLabel.setText(text)
         else:
             self.nameSeedLabel.setText(data.name)
+
+        if isPrediction:
+            self.setStyleSheet("background-color: red")
+
+    def __init__(self, data, isPrediction, parent=None):
+        super().__init__(parent)
+
+        self.nameSeedLabel = QRightClickButton()
+        self.update(data, isPrediction)
+        
         self.nameSeedLabel.clicked.connect(self.clicked.emit)
         self.nameSeedLabel.rightClicked.connect(self.rightClicked.emit)
+
         self.mainLayout = QHBoxLayout()
         self.mainLayout.setSpacing(0)
-        self.mainLayout.setContentsMargins(0,0,0,0)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
         self.mainLayout.addWidget(self.nameSeedLabel)
         self.setLayout(self.mainLayout)
 
 
 class BracketNode(QWidget):
-    def __init__(self, data, is_prediction, parent=None):
+    def __init__(self, data, roundNum, isPrediction, mainWindow, parent=None):
         super().__init__(parent)
-        self.is_prediction = is_prediction
+        self.data = data
+        self.roundNum = roundNum
+        self.isPrediction = isPrediction
+        self.mainWindow = mainWindow  # ref to mainWindow
 
-        self.playerOneNode = PlayerNode(data.playerOneNodeData)
+        self.playerOneNode = PlayerNode(data.playerOneNodeData, self.isPrediction)
         self.playerOneNode.clicked.connect(self.onNode1Clicked)
         self.playerOneNode.rightClicked.connect(self.onRightClicked)
-        
-        if self.is_prediction:
-            self.playerOneNode.setStyleSheet("background-color: red")
 
-        self.playerTwoNode = PlayerNode(data.playerTwoNodeData)
+        self.playerTwoNode = PlayerNode(data.playerTwoNodeData, self.isPrediction)
         self.playerTwoNode.clicked.connect(self.onNode2Clicked)
         self.playerTwoNode.rightClicked.connect(self.onRightClicked)
-
-        if self.is_prediction:
-            self.playerTwoNode.setStyleSheet("background-color: red")
 
         self.groupBoxLayout = QVBoxLayout()
         self.groupBoxLayout.setSpacing(0)
@@ -74,21 +86,21 @@ class BracketNode(QWidget):
 
         self.mainLayout = QVBoxLayout()
         self.mainLayout.addWidget(self.groupBox)
-        
+
         self.setLayout(self.mainLayout)
-    
+
     def onNode1Clicked(self):
-        # updateBracket
-        # redrawBracket
-        pass
+        winner = self.data.playerOneNodeData
+        opponent = self.data.playerTwoNodeData
+        self.mainWindow.updateBracket(self.data, winner, opponent, self.roundNum)
 
     def onNode2Clicked(self):
-        # updateBracket
-        # redrawBracket
-        pass
+        winner = self.data.playerTwoNodeData
+        opponent = self.data.playerOneNodeData
+        self.mainWindow.updateBracket(self.data, winner, opponent, self.roundNum)
 
     def onRightClicked(self):
-        pass # can be used to show detailed match info (not implemented)
+        pass  # can be used to show detailed match info (not implemented)
 
 
 class RoundBracket(QWidget):
@@ -96,7 +108,7 @@ class RoundBracket(QWidget):
         super().__init__(parent)
 
         self.bracketNodes = bracketNodeList
-        
+
         self.title = QLabel()
         self.title.setText("Round " + str(roundNum))
 

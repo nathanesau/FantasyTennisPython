@@ -109,10 +109,21 @@ class MainWindow(QMainWindow):
 
         roundBrackets = []
         for key in bracketNodes.keys():
-            roundBrackets.append(RoundBracket(bracketNodes[key], key))
+            roundBrackets.append(RoundBracket(bracketNodes[key], key, self))
 
         self.bracket = Bracket(roundBrackets)
         self.scrollArea.setWidget(self.bracket)
+
+    def hideRoundBracket(self, roundNum):
+        bracket = self.bracket
+        bracket.roundBrackets[roundNum-1] = RoundBracket([], roundNum, self)
+        bracket.roundBrackets[roundNum-1].mainLayout.setAlignment(Qt.AlignTop)
+        self.bracket = Bracket(bracket.roundBrackets)
+        self.scrollArea.setWidget(self.bracket)
+        self.repaint()
+
+    def showRoundBracket(self, roundNum):
+        pass
 
     def onLoadBracket(self):
         loadBracketDlg = LoadBracketDialog()
@@ -159,14 +170,16 @@ class MainWindow(QMainWindow):
             top = prev_index % 2 != 0 # top of bracket if prev_index is odd
             playerNode = bracketNode.playerOneNode if top else bracketNode.playerTwoNode
             bracketData = bracketNode.data.playerOneNodeData if top else bracketNode.data.playerTwoNodeData
-            if playerNode.data.name != winner.name: 
-                if playerNode.data.name == opponent.name: # update needed
+            if playerNode.data.name != winner.name:
+                needUpdate = playerNode.data.name == opponent.name or \
+							(playerNode.data.name == "unknown" and roundNum == currRoundNum+1)
+                if needUpdate: # update needed
                     playerNode.update(winner, True)
                     if top:
                         bracketNode.data.playerOneNodeData = winner
                     else:
                         bracketNode.data.playerTwoNodeData = winner
-                        
+
         self.bracket.repaint()
 
     def onResetPred(self):

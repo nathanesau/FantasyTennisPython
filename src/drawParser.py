@@ -5,8 +5,6 @@ from database import *
 import os.path
 import math
 
-workspace_dir = os.path.dirname(os.path.realpath(__file__))
-
 # inputFName: html input
 # outputFName: db output
 
@@ -105,5 +103,6 @@ def html_to_db(inputFName, outputFName):
         country = "" if player not in countryDict else countryDict[player]
         playerRowList.append([player, seed, country])  # country parsed later
 
-    tennisData = TennisData(drawRowList, playerRowList)
-    db.SaveToDb(outputFName, tennisData)
+    # predictions = actual data
+    tennisData = TennisData(drawRowList, drawRowList, playerRowList)
+    db.SaveDrawToDb(outputFName, tennisData)

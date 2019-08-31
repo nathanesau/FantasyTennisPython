@@ -7,8 +7,9 @@ from data import *
 
 
 class TennisData:
-    def __init__(self, drawRowList, playerRowList):
+    def __init__(self, drawRowList, drawPredictionsRowList, playerRowList):
         self.drawRowList = drawRowList
+        self.drawPredictionsRowList = drawPredictionsRowList
         self.playerRowList = playerRowList
 
 
@@ -33,7 +34,7 @@ class TennisDatabase:
         while query.next():
             availableTableNames.append(query.value(0))
 
-        for tableName in ["DRAW", "PLAYER"]:
+        for tableName in ["DRAW", "DRAWPREDICTIONS", "PLAYER"]:
             if tableName in availableTableNames:
                 if not query.exec("DELETE FROM " + tableName):
                     qWarning("DatabaseInit - ERROR " +
@@ -41,31 +42,36 @@ class TennisDatabase:
             else:  # table doesn't exist
                 if tableName == "DRAW":
                     self.createTableDraw()
+                elif tableName == "DRAWPREDICTIONS":
+                    self.createTableDrawPredictions()
                 elif tableName == "PLAYER":
                     self.createTablePlayer()
 
-    def DatabasePopulate(self, tennisData):
-        self.populateTableDraw(tennisData.drawRowList)
-        self.populateTablePlayer(tennisData.playerRowList)
-
-    def DatabaseLoad(self, tennisData):
-        self.loadTableDraw(tennisData.drawRowList)
-        self.loadTablePlayer(tennisData.playerRowList)
-
-    def SaveToDb(self, dbName, tennisData):
+    def SaveDrawToDb(self, dbName, tennisData):
         self.DatabaseConnect(dbName)
         self.DatabaseInit()
-        self.DatabasePopulate(tennisData)
+        self.populateTableDraw(tennisData.drawRowList)
+        self.populateTableDrawPredictions(tennisData.drawPredictionsRowList)
+        self.populateTablePlayer(tennisData.playerRowList)
 
-    def LoadFromDb(self, dbName, tennisData):
+    def LoadDrawFromDb(self, dbName, tennisData):
         self.DatabaseConnect(dbName)
-        self.DatabaseLoad(tennisData)
+        self.loadTableDraw(tennisData.drawRowList)
+        self.loadTableDrawPredictions(tennisData.drawPredictionsRowList)
+        self.loadTablePlayer(tennisData.playerRowList)
 
     def createTableDraw(self):
         query = QSqlQuery(
             "CREATE TABLE DRAW (id INTEGER PRIMARY KEY, Round INTEGER, Player1 TEXT, Player2 TEXT)")
         if not query.isActive():
             qWarning("createTableDraw - ERROR: " + query.lastError().text())
+
+    def createTableDrawPredictions(self):
+        query = QSqlQuery(
+            "CREATE TABLE DRAWPREDICTIONS (id INTEGER PRIMARY KEY, Round INTEGER, Player1 TEXT, Player2 TEXT)")
+        if not query.isActive():
+            qWarning("createTableDrawPredictions - ERROR: " +
+                     query.lastError().text())
 
     def createTablePlayer(self):
         query = QSqlQuery(
@@ -84,6 +90,20 @@ class TennisDatabase:
             query.bindValue(2, row[2])
             if not query.exec():
                 qWarning("populateTableDraw - ERROR: " +
+                         query.lastError().text())
+        QSqlDatabase.database().commit()
+
+    def populateTableDrawPredictions(self, drawRowList):
+        query = QSqlQuery()
+        query.prepare(
+            "INSERT INTO DrawPredictions(Round, Player1, Player2) VALUES(?,?,?)")
+        QSqlDatabase.database().transaction()
+        for row in drawRowList:
+            query.bindValue(0, row[0])
+            query.bindValue(1, row[1])
+            query.bindValue(2, row[2])
+            if not query.exec():
+                qWarning("populateTableDrawPredictions - ERROR: " +
                          query.lastError().text())
         QSqlDatabase.database().commit()
 
@@ -106,10 +126,21 @@ class TennisDatabase:
         if not query.exec("SELECT Round, Player1, Player2 FROM DRAW"):
             qWarning("loadTableDraw - ERROR " + query.lastError().text())
         while query.next():
-            round = query.value(0)
+            roundNum = query.value(0)
             player1 = query.value(1)
             player2 = query.value(2)
-            drawRowList.append([round, player1, player2])
+            drawRowList.append([roundNum, player1, player2])
+
+    def loadTableDrawPredictions(self, drawRowList):
+        query = QSqlQuery()
+        if not query.exec("SELECT Round, Player1, Player2 FROM DRAWPREDICTIONS"):
+            qWarning("loadTableDrawPredictions - ERROR " +
+                     query.lastError().text())
+        while query.next():
+            roundNum = query.value(0)
+            player1 = query.value(1)
+            player2 = query.value(2)
+            drawRowList.append([roundNum, player1, player2])
 
     def loadTablePlayer(self, playerRowList):
         query = QSqlQuery()

@@ -3,7 +3,7 @@ from PyQt5.QtGui import *
 import os.path
 import os
 
-data_dir = os.path.dirname(os.path.realpath(__file__)) + "/html_data/"
+html_dir = os.path.dirname(os.path.realpath(__file__)) + "/html_data/"
 
 class ConvertHTMLDialog(QDialog):
     def __init__(self, parent=None):
@@ -12,7 +12,7 @@ class ConvertHTMLDialog(QDialog):
         self.fileComboBoxLabel.setText("Select HTML file to convert")
         self.fileComboBox = QComboBox()
         cb_items = []
-        for root, directories, files in os.walk(data_dir):
+        for root, directories, files in os.walk(html_dir):
             for f in files:
                 if '.html' in f:
                     cb_items.append(f)

@@ -1,14 +1,18 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from urllib.request import urlopen, Request
 import qrc_resources  # pyrcc5 resources.qrc -o qrc_resources.py
 import os.path
 import math
+import copy
 
 from bracket import *
 from database import *
 from loadBracketDialog import *
 from convertHtmlDialog import *
+from downloadDialog import *
 from loadPredictionsDialog import *
+from savePredictionsDialog import *
 from drawParser import *
 from data import *
 
@@ -19,6 +23,8 @@ custom_dir = os.path.dirname(os.path.realpath(__file__)) + "/custom_data/"
 
 class MainWindow(QMainWindow):
     def setupActions(self):
+        self.downloadBracketAction = QAction("Download HTML Bracket")
+        self.downloadBracketAction.triggered.connect(self.onDownloadBracket)
         self.convertHtmlToDbAction = QAction("Convert HTML to DB")
         self.convertHtmlToDbAction.triggered.connect(self.onConvertHTMLToDB)
         self.loadAction = QAction("Load Bracket")
@@ -34,6 +40,7 @@ class MainWindow(QMainWindow):
     def setupMenus(self):
         fileMenu = self.menuBar().addMenu("File")
         fileMenu.addAction(self.loadAction)
+        fileMenu.addAction(self.downloadBracketAction)
         fileMenu.addAction(self.convertHtmlToDbAction)
         predMenu = self.menuBar().addMenu("Predictions")
         predMenu.addAction(self.resetPredAction)
@@ -42,6 +49,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        self.tournamentName = ""
 
         self.setupActions()
         self.setupMenus()
@@ -56,6 +65,31 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Fantasy Tennis")
         self.setWindowIcon(QIcon(":icon.png"))
         self.resize(600, 600)
+
+    def onDownloadBracket(self):
+        downloadDlg = DownloadDialog("", "out.html")
+
+        if not downloadDlg.exec():  # reject
+            return
+        
+        # EXAMPLE: "https://www.atptour.com/en/scores/archive/cincinnati/422/2019/draws"
+        url = downloadDlg.urlLE.text()
+
+        # example: out.html
+        fname = html_dir + downloadDlg.fnameLE.text()
+
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'}
+        req = Request(url=url, headers=headers)
+        html = urlopen(req).read()
+        html_file = open(fname, "w")
+        html_file.write(html.decode("utf-8"))
+        html_file.close()
+        
+        msgBox = QMessageBox()
+        msgBox.setWindowTitle("Download complete")
+        msgBox.setText("Download HTML bracket to html_data folder. Bracket can now be converted")
+        msgBox.setWindowIcon(QIcon(":icon.png"))
+        msgBox.exec()
 
     def onConvertHTMLToDB(self):
         convertHTMLDlg = ConvertHTMLDialog()
@@ -74,6 +108,9 @@ class MainWindow(QMainWindow):
         msgBox.exec()
 
     def showData(self, tennisData):
+        self.playerRowList = tennisData.playerRowList
+        self.drawRowList = tennisData.drawRowList
+
         seedDict = {}
         countryDict = {}
         for row in tennisData.playerRowList:
@@ -94,8 +131,16 @@ class MainWindow(QMainWindow):
         for roundNum in range(0, numRounds, 1):
             bracketNodes[roundNum+1] = []
 
-        for row in tennisData.drawRowList:
-            roundNum, player1, player2 = row[0], row[1], row[2]
+        for i in range(len(tennisData.drawRowList)):
+            drawRow = tennisData.drawRowList[i]
+            drawPredictionsRow = drawRow
+            if i < len(tennisData.drawPredictionsRowList):
+                drawPredictionsRow = tennisData.drawPredictionsRowList[i]
+
+            roundNum = drawRow[0]
+            player1, player2 = drawRow[1], drawRow[2]
+            player1Prediction, player2Prediction = drawPredictionsRow[1], drawPredictionsRow[2]
+
             if roundNum <= numRounds:
                 seed1 = '0' if not player1 in seedDict else seedDict[player1]
                 seed2 = '0' if not player2 in seedDict else seedDict[player2]
@@ -103,27 +148,50 @@ class MainWindow(QMainWindow):
                 country2 = "" if not player2 in countryDict else countryDict[player2]
                 d1 = PlayerNodeData(player1, seed1, country1)
                 d2 = PlayerNodeData(player2, seed2, country2)
+
+                seed1Prediction = '0' if not player1Prediction in seedDict else seedDict[
+                    player1Prediction]
+                seed2Prediction = '0' if not player2Prediction in seedDict else seedDict[
+                    player2Prediction]
+                country1Prediction = "" if not player1Prediction in countryDict else countryDict[
+                    player1Prediction]
+                country2Prediction = "" if not player2Prediction in countryDict else countryDict[
+                    player2Prediction]
+                d1Prediction = PlayerNodeData(
+                    player1Prediction, seed1Prediction, country1Prediction)
+                d2Prediction = PlayerNodeData(
+                    player2Prediction, seed2Prediction, country2Prediction)
+
                 nodeData = BracketNodeData(d1, d2)
-                node = BracketNode(nodeData, roundNum, False, self)
+                nodeDataPrediction = BracketNodeData(d1Prediction, d2Prediction)
+                node = BracketNode(nodeData, roundNum, self)
+                node.playerOneNode.update(d1Prediction)
+                node.playerTwoNode.update(d2Prediction)
+                node.data.playerOneNodeData = d1Prediction
+                node.data.playerTwoNodeData = d2Prediction
                 bracketNodes[roundNum].append(node)
 
-        roundBrackets = []
+        self.roundBrackets = []
+        self.roundBracketVisible = {}
         for key in bracketNodes.keys():
-            roundBrackets.append(RoundBracket(bracketNodes[key], key, self))
+            self.roundBrackets.append(
+                RoundBracket(bracketNodes[key], key, self))
+            self.roundBracketVisible[key] = True
 
-        self.bracket = Bracket(roundBrackets)
+        self.bracket = Bracket(
+            self.roundBrackets, self.roundBracketVisible, self)
         self.scrollArea.setWidget(self.bracket)
 
-    def hideRoundBracket(self, roundNum):
-        bracket = self.bracket
-        bracket.roundBrackets[roundNum-1] = RoundBracket([], roundNum, self)
-        bracket.roundBrackets[roundNum-1].mainLayout.setAlignment(Qt.AlignTop)
-        self.bracket = Bracket(bracket.roundBrackets)
+    def hideShowRoundBracket(self, roundNum):
+        if self.roundBracketVisible[roundNum]:
+            self.roundBracketVisible[roundNum] = False
+        else:
+            self.roundBracketVisible[roundNum] = True
+
+        self.bracket = Bracket(
+            self.roundBrackets, self.roundBracketVisible, self)
         self.scrollArea.setWidget(self.bracket)
         self.repaint()
-
-    def showRoundBracket(self, roundNum):
-        pass
 
     def onLoadBracket(self):
         loadBracketDlg = LoadBracketDialog()
@@ -131,19 +199,21 @@ class MainWindow(QMainWindow):
         if not loadBracketDlg.exec():  # reject
             return
 
-        tennisData = TennisData([], [])
+        tennisData = TennisData([], [], [])
         db = TennisDatabase()
         db_file = loadBracketDlg.fileComboBox.currentText()
-        db.LoadFromDb(data_dir + db_file, tennisData)
+        db.LoadDrawFromDb(data_dir + db_file, tennisData)
         self.showData(tennisData)
-        self.setWindowTitle("Fantasy Tennis " + "(" + db_file + ")")
+
+        self.tournamentName = db_file.replace(".db", "")
+        self.setWindowTitle("Fantasy Tennis " + "(" + self.tournamentName + ")")
 
     # data: BracketNodeData which was modified
     # winner: PlayerNodeData which won the match
     def updateBracket(self, data, winner, opponent, currRoundNum):
         roundBrackets = self.bracket.roundBrackets  # [0]: round1, ...
         numRounds = len(roundBrackets)
-        indexDict = {} # indices to update for each round
+        indexDict = {}  # indices to update for each round
 
         for roundNum in range(1, numRounds+1, 1):
             indexDict[roundNum] = {}
@@ -167,14 +237,14 @@ class MainWindow(QMainWindow):
             index = indexDict[roundNum]
             prev_index = indexDict[roundNum-1]
             bracketNode = roundBracketNodes[index-1]
-            top = prev_index % 2 != 0 # top of bracket if prev_index is odd
+            top = prev_index % 2 != 0  # top of bracket if prev_index is odd
             playerNode = bracketNode.playerOneNode if top else bracketNode.playerTwoNode
             bracketData = bracketNode.data.playerOneNodeData if top else bracketNode.data.playerTwoNodeData
             if playerNode.data.name != winner.name:
                 needUpdate = playerNode.data.name == opponent.name or \
-							(playerNode.data.name == "unknown" and roundNum == currRoundNum+1)
-                if needUpdate: # update needed
-                    playerNode.update(winner, True)
+                    (playerNode.data.name == "unknown" and roundNum == currRoundNum+1)
+                if needUpdate:  # update needed
+                    playerNode.update(winner)
                     if top:
                         bracketNode.data.playerOneNodeData = winner
                     else:
@@ -183,10 +253,37 @@ class MainWindow(QMainWindow):
         self.bracket.repaint()
 
     def onResetPred(self):
-        pass
+        for roundBracket in self.bracket.roundBrackets:
+            for bracketNode in roundBracket.bracketNodes:
+                bracketNode.playerOneNode.resetData()
+                bracketNode.playerTwoNode.resetData()
 
     def onSavePred(self):
-        pass
+        savePredictionsDlg = SavePredictionsDialog(self.tournamentName)
+
+        if not savePredictionsDlg.exec():  # reject
+            return
+
+        db_file = savePredictionsDlg.fileNameLE.text()
+        db_file += ".db"
+
+        drawPredictionsRowList = []  # note: doesn't include winner of final round
+
+        for roundBracket in self.bracket.roundBrackets:
+            roundNum = roundBracket.roundNum
+            for bracketNode in roundBracket.bracketNodes:
+                playerOneName = bracketNode.data.playerOneNodeData.name
+                playerTwoName = bracketNode.data.playerTwoNodeData.name
+                drawPredictionsRowList.append(
+                    [roundNum, playerOneName, playerTwoName])
+
+        tennisData = TennisData(
+            self.drawRowList, drawPredictionsRowList, self.playerRowList)
+        db = TennisDatabase()
+        db.SaveDrawToDb(custom_dir + db_file, tennisData)
+
+        self.tournamentName = db_file.replace(".db", "")
+        self.setWindowTitle("Fantasy Tennis " + "(" + self.tournamentName + ")")
 
     def onLoadPred(self):
         loadPredictionsDlg = LoadPredictionsDialog()
@@ -194,4 +291,11 @@ class MainWindow(QMainWindow):
         if not loadPredictionsDlg.exec():  # reject
             return
 
-        x = 5  # todo
+        tennisData = TennisData([], [], [])
+        db = TennisDatabase()
+        db_file = loadPredictionsDlg.fileComboBox.currentText()
+        db.LoadDrawFromDb(custom_dir + db_file, tennisData)
+        self.showData(tennisData)
+
+        self.tournamentName = db_file.replace(".db", "")
+        self.setWindowTitle("Fantasy Tennis " + "(" + self.tournamentName + ")")

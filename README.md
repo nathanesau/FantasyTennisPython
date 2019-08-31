@@ -1,6 +1,6 @@
 # FantasyTennis
 
-Interactive Draw Editor written in Python.
+Interactive Draw Editor written in Python. Data here if you don't want to manually download it all: https://github.com/nathanesau/FantasyTennisData
 
 ## Releases
 

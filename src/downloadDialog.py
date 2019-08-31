@@ -9,6 +9,8 @@ tmp_dir = os.path.dirname(os.path.realpath(__file__)) + "/tmp/"
 
 
 def downloadArchive(year=2019, out_dir=tmp_dir):
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
     url = "https://www.atptour.com/en/scores/results-archive" + "?year=" + str(year)
     fname = out_dir + "archive.html"
     headers = {
@@ -22,7 +24,10 @@ def downloadArchive(year=2019, out_dir=tmp_dir):
 # parse links from atptour.com/en/scores/results-archive using bs4
 
 
-def getDownloadOptions():
+def getDownloadOptions(tmp_dir=tmp_dir):
+    if not os.path.exists(tmp_dir):
+        os.mkdir(tmp_dir)
+        
     inputFName = tmp_dir + "archive.html"
 
     soup = BeautifulSoup(open(inputFName), "html.parser")

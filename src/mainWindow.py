@@ -51,23 +51,6 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # create required folders
-        if not os.path.exists(Settings.readDataDir()):
-            try:
-                os.mkdir(Settings.readDataDir())
-            except:
-                print('cannot create data dir')
-        if not os.path.exists(Settings.readHtmlDir()):
-            try:
-                os.mkdir(Settings.readHtmlDir())
-            except:
-                print('cannot create html dir')
-        if not os.path.exists(Settings.readCustomDir()):
-            try:
-                os.mkdir(Settings.readCustomDir())
-            except:
-                print('cannot create custom dir')
-
         self.setupActions()
         self.setupMenus()
         self.scrollArea = QScrollArea()
@@ -106,9 +89,7 @@ class MainWindow(QMainWindow):
         key = list(download_options.keys())[downloadDlg.urlComboBox.currentIndex()]
         url = "https://www.atptour.com" + download_options[key]
 
-        # example: out.html
         fname = Settings.readHtmlDir() + downloadDlg.fnameLE.text()
-
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'}
         req = Request(url=url, headers=headers)
         html = urlopen(req).read()

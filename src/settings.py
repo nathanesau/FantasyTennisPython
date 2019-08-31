@@ -2,14 +2,15 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import os.path
+import os
 
 ORGANIZATION_NAME = "nathanesau_software"
 APPLICATION_NAME = "FantasyTennis"
 
 class Settings:
-    default_data_dir = os.path.dirname(os.path.realpath(__file__)) + "/data/"
-    default_html_dir = os.path.dirname(os.path.realpath(__file__)) + "/html_data/"
-    default_custom_dir = os.path.dirname(os.path.realpath(__file__)) + "/custom_data/"
+    default_data_dir = "data/"
+    default_html_dir = "html_data/"
+    default_custom_dir = "custom_data/"
 
     @staticmethod
     def readDataDir():
@@ -17,6 +18,11 @@ class Settings:
         settings.beginGroup("Directories")
         dataDir = settings.value("dataDir", Settings.default_data_dir)
         settings.endGroup()
+        try:
+            if not os.path.exists(dataDir):
+                os.mkdir(dataDir)
+        except:
+            print("cannot create data dir")
         return dataDir
 
     @staticmethod
@@ -34,6 +40,11 @@ class Settings:
         settings.beginGroup("Directories")
         htmlDir = settings.value("htmlDir", Settings.default_html_dir)
         settings.endGroup()
+        try:
+            if not os.path.exists(htmlDir):
+                os.mkdir(htmlDir)
+        except:
+            print("cannot create html dir")
         return htmlDir
 
     @staticmethod
@@ -51,6 +62,11 @@ class Settings:
         settings.beginGroup("Directories")
         customDir = settings.value("customDir", Settings.default_custom_dir)
         settings.endGroup()
+        try:
+            if not os.path.exists(customDir):
+                os.mkdir(customDir)
+        except:
+            print("cannot create predictions dir")
         return customDir
     
     @staticmethod

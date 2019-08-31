@@ -23,7 +23,7 @@ custom_dir = os.path.dirname(os.path.realpath(__file__)) + "/custom_data/"
 
 class MainWindow(QMainWindow):
     def setupActions(self):
-        self.downloadBracketAction = QAction("Download HTML Bracket")
+        self.downloadBracketAction = QAction("Download Bracket (HTML)")
         self.downloadBracketAction.triggered.connect(self.onDownloadBracket)
         self.convertHtmlToDbAction = QAction("Convert HTML to DB")
         self.convertHtmlToDbAction.triggered.connect(self.onConvertHTMLToDB)
@@ -39,9 +39,9 @@ class MainWindow(QMainWindow):
 
     def setupMenus(self):
         fileMenu = self.menuBar().addMenu("File")
-        fileMenu.addAction(self.loadAction)
         fileMenu.addAction(self.downloadBracketAction)
         fileMenu.addAction(self.convertHtmlToDbAction)
+        fileMenu.addAction(self.loadAction)
         predMenu = self.menuBar().addMenu("Predictions")
         predMenu.addAction(self.resetPredAction)
         predMenu.addAction(self.savePredAction)
@@ -75,13 +75,17 @@ class MainWindow(QMainWindow):
         self.resize(600, 600)
 
     def onDownloadBracket(self):
-        downloadDlg = DownloadDialog("", "out.html")
+        downloadArchive()
+
+        download_options = getDownloadOptions()
+        downloadDlg = DownloadDialog(download_options, "out.html")
 
         if not downloadDlg.exec():  # reject
             return
         
         # EXAMPLE: "https://www.atptour.com/en/scores/archive/cincinnati/422/2019/draws"
-        url = downloadDlg.urlLE.text()
+        key = list(download_options.keys())[downloadDlg.urlComboBox.currentIndex()]
+        url = "https://www.atptour.com" + download_options[key]
 
         # example: out.html
         fname = html_dir + downloadDlg.fnameLE.text()

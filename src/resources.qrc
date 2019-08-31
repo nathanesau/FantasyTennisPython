@@ -43,5 +43,13 @@
         <file alias="ned.svg">images/ned.svg</file>
         <file alias="rsa.svg">images/rsa.svg</file>
         <file alias="nor.svg">images/nor.svg</file>
+        <file alias="chn.svg">images/chn.svg</file>
+        <file alias="den.svg">images/den.svg</file>
+        <file alias="lat.svg">images/lat.svg</file>
+        <file alias="qat.svg">images/qat.svg</file>
+        <file alias="tun.svg">images/tun.svg</file>
+        <file alias="tur.svg">images/tur.svg</file>
+        <file alias="ukr.svg">images/ukr.svg</file>
+        <file alias="uzb.svg">images/uzb.svg</file>
     </qresource>
 </RCC>

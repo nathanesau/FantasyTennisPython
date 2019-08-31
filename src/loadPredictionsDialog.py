@@ -2,8 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import os.path
 import os
-
-custom_dir = os.path.dirname(os.path.realpath(__file__)) + "/custom_data/"
+from settings import *
 
 class LoadPredictionsDialog(QDialog):
     def __init__(self, parent=None):
@@ -12,7 +11,7 @@ class LoadPredictionsDialog(QDialog):
         self.fileComboBoxLabel.setText("Select predictions to load")
         self.fileComboBox = QComboBox()
         cb_items = []
-        for root, directories, files in os.walk(custom_dir):
+        for root, directories, files in os.walk(Settings.readCustomDir()):
             for f in files:
                 if '.db' in f:
                     cb_items.append(f)

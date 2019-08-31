@@ -2,8 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import os.path
 import os
-
-data_dir = os.path.dirname(os.path.realpath(__file__)) + "/data/"
+from settings import *
 
 class LoadBracketDialog(QDialog):
     def __init__(self, parent=None):
@@ -12,7 +11,7 @@ class LoadBracketDialog(QDialog):
         self.fileComboBoxLabel.setText("Select bracket to load")
         self.fileComboBox = QComboBox()
         cb_items = []
-        for root, directories, files in os.walk(data_dir):
+        for root, directories, files in os.walk(Settings.readDataDir()):
             for f in files:
                 if '.db' in f:
                     cb_items.append(f)

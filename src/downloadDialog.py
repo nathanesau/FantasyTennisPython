@@ -5,7 +5,6 @@ from PyQt5.QtGui import *
 import os.path
 import os
 
-html_dir = os.path.dirname(os.path.realpath(__file__)) + "/html_data/"
 tmp_dir = os.path.dirname(os.path.realpath(__file__)) + "/tmp/"
 
 

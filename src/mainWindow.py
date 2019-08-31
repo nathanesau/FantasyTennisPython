@@ -13,12 +13,9 @@ from convertHtmlDialog import *
 from downloadDialog import *
 from loadPredictionsDialog import *
 from savePredictionsDialog import *
+from settings import *
 from drawParser import *
 from data import *
-
-data_dir = os.path.dirname(os.path.realpath(__file__)) + "/data/"
-html_dir = os.path.dirname(os.path.realpath(__file__)) + "/html_data/"
-custom_dir = os.path.dirname(os.path.realpath(__file__)) + "/custom_data/"
 
 
 class MainWindow(QMainWindow):
@@ -30,6 +27,8 @@ class MainWindow(QMainWindow):
         self.loadAction = QAction("Load Bracket")
         self.loadAction.setShortcuts(QKeySequence.Open)
         self.loadAction.triggered.connect(self.onLoadBracket)
+        self.preferencesAction = QAction("Preferences")
+        self.preferencesAction.triggered.connect(self.onPreferences)
         self.resetPredAction = QAction("Reset Predictions")
         self.resetPredAction.triggered.connect(self.onResetPred)
         self.savePredAction = QAction("Save Predictions")
@@ -42,6 +41,8 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self.downloadBracketAction)
         fileMenu.addAction(self.convertHtmlToDbAction)
         fileMenu.addAction(self.loadAction)
+        editMenu = self.menuBar().addMenu("Edit")
+        editMenu.addAction(self.preferencesAction)
         predMenu = self.menuBar().addMenu("Predictions")
         predMenu.addAction(self.resetPredAction)
         predMenu.addAction(self.savePredAction)
@@ -51,14 +52,21 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
 
         # create required folders
-        if not os.path.exists(data_dir):
-            os.mkdir(data_dir)
-        if not os.path.exists(html_dir):
-            os.mkdir(html_dir)
-        if not os.path.exists(custom_dir):
-            os.mkdir(custom_dir)
-
-        self.tournamentName = ""
+        if not os.path.exists(Settings.readDataDir()):
+            try:
+                os.mkdir(Settings.readDataDir())
+            except:
+                print('cannot create data dir')
+        if not os.path.exists(Settings.readHtmlDir()):
+            try:
+                os.mkdir(Settings.readHtmlDir())
+            except:
+                print('cannot create html dir')
+        if not os.path.exists(Settings.readCustomDir()):
+            try:
+                os.mkdir(Settings.readCustomDir())
+            except:
+                print('cannot create custom dir')
 
         self.setupActions()
         self.setupMenus()
@@ -69,10 +77,21 @@ class MainWindow(QMainWindow):
         self.scrollArea.setWidget(instructionLabel)
         self.scrollArea.setAlignment(Qt.AlignCenter)
 
+        self.tournamentName = ""
         self.setCentralWidget(self.scrollArea)
         self.setWindowTitle("Fantasy Tennis")
         self.setWindowIcon(QIcon(":icon.png"))
         self.resize(600, 600)
+
+    def onPreferences(self):
+        settingsDlg = SettingsDialog()
+
+        if not settingsDlg.exec():   # reject
+            return
+        
+        Settings.writeDataDir(settingsDlg.dataDirLE.text())
+        Settings.writeHtmlDir(settingsDlg.htmlDirLE.text())
+        Settings.writeCustomDir(settingsDlg.customDirLE.text())
 
     def onDownloadBracket(self):
         downloadArchive()
@@ -88,7 +107,7 @@ class MainWindow(QMainWindow):
         url = "https://www.atptour.com" + download_options[key]
 
         # example: out.html
-        fname = html_dir + downloadDlg.fnameLE.text()
+        fname = Settings.readHtmlDir() + downloadDlg.fnameLE.text()
 
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'}
         req = Request(url=url, headers=headers)
@@ -111,7 +130,7 @@ class MainWindow(QMainWindow):
 
         html_file = convertHTMLDlg.fileComboBox.currentText()
         db_file = html_file.replace(".html", ".db")
-        html_to_db(html_dir + html_file, data_dir + db_file)
+        html_to_db(Settings.readHtmlDir() + html_file, Settings.readDataDir() + db_file)
 
         msgBox = QMessageBox()
         msgBox.setWindowTitle("Convert HTML to DB finished")
@@ -214,7 +233,7 @@ class MainWindow(QMainWindow):
         tennisData = TennisData([], [], [])
         db = TennisDatabase()
         db_file = loadBracketDlg.fileComboBox.currentText()
-        db.LoadDrawFromDb(data_dir + db_file, tennisData)
+        db.LoadDrawFromDb(Settings.readDataDir() + db_file, tennisData)
         self.showData(tennisData)
 
         self.tournamentName = db_file.replace(".db", "")
@@ -292,7 +311,7 @@ class MainWindow(QMainWindow):
         tennisData = TennisData(
             self.drawRowList, drawPredictionsRowList, self.playerRowList)
         db = TennisDatabase()
-        db.SaveDrawToDb(custom_dir + db_file, tennisData)
+        db.SaveDrawToDb(Settings.readCustomDir() + db_file, tennisData)
 
         self.tournamentName = db_file.replace(".db", "")
         self.setWindowTitle("Fantasy Tennis " + "(" + self.tournamentName + ")")
@@ -306,7 +325,7 @@ class MainWindow(QMainWindow):
         tennisData = TennisData([], [], [])
         db = TennisDatabase()
         db_file = loadPredictionsDlg.fileComboBox.currentText()
-        db.LoadDrawFromDb(custom_dir + db_file, tennisData)
+        db.LoadDrawFromDb(Settings.readCustomDir() + db_file, tennisData)
         self.showData(tennisData)
 
         self.tournamentName = db_file.replace(".db", "")

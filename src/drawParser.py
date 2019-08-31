@@ -55,7 +55,10 @@ def html_to_db(inputFName, outputFName):
                 win_players.append(playerName)
 
     drawSize = len(round1_players)
-    assert(drawSize is 32 or drawSize is 64 or drawSize is 128)
+    if not (drawSize is 8 or drawSize is 16 or drawSize is 32 or drawSize is 64 or drawSize is 128):
+        print("cannot convert HTML to db (drawSize = ", drawSize, ")")
+        return # parser was not programmed to handle this case
+    
     numRounds = int(math.log(drawSize)/math.log(2)) + 1
     rounds = [[] for i in range(numRounds)]
 

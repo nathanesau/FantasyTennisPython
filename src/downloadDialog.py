@@ -9,9 +9,9 @@ html_dir = os.path.dirname(os.path.realpath(__file__)) + "/html_data/"
 tmp_dir = os.path.dirname(os.path.realpath(__file__)) + "/tmp/"
 
 
-def downloadArchive():
-    url = "https://www.atptour.com/en/scores/results-archive"
-    fname = tmp_dir + "archive.html"
+def downloadArchive(year=2019, out_dir=tmp_dir):
+    url = "https://www.atptour.com/en/scores/results-archive" + "?year=" + str(year)
+    fname = out_dir + "archive.html"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'}
     req = Request(url=url, headers=headers)

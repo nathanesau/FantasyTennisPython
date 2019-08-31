@@ -3,7 +3,7 @@
 from downloadDialog import *
 from drawParser import *
 
-years = [2010,2011,2012,2013,2014,2015,2016]
+years = [2015, 2016]
 
 for year in years:
     tmp_dir = os.path.dirname(os.path.realpath(__file__)) + "/tmp/"
@@ -39,7 +39,11 @@ for year in years:
         fname = html_dir + tourney_names[i] + ".html"
         url = url_list[i]
         req = Request(url=url, headers=headers)
-        html = urlopen(req).read()
+        try:
+            html = urlopen(req).read()
+        except:
+            print("cannot open url")
+            continue
         html_file = open(fname, "w")
         html_file.write(html.decode("utf-8"))
         html_file.close()
@@ -47,4 +51,8 @@ for year in years:
     for i in range(len(tourney_names)):
         html_file = tourney_names[i] + ".html"
         db_file = html_file.replace(".html", ".db")
-        html_to_db(html_dir + html_file, data_dir + db_file)
+        try:
+            html_to_db(html_dir + html_file, data_dir + db_file)
+        except:
+            print("error in html_to_db (.html file not exist?)")
+            continue

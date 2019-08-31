@@ -50,6 +50,14 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        # create required folders
+        if not os.path.exists(data_dir):
+            os.mkdir(data_dir)
+        if not os.path.exists(html_dir):
+            os.mkdir(html_dir)
+        if not os.path.exists(custom_dir):
+            os.mkdir(custom_dir)
+
         self.tournamentName = ""
 
         self.setupActions()

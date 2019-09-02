@@ -1,0 +1,7 @@
+/* @theme sds */
+
+@import 'default';
+section {
+    background-color: #fff8e1;
+    color: #455a64
+}

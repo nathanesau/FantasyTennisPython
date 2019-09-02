@@ -38,7 +38,7 @@ class PlayerNode(QWidget):
             self.nameSeedLabel.setText(data.name)
 
         if self.data.name != self.originalData.name: # prediction
-            self.setStyleSheet("background-color: red")
+            self.setStyleSheet("background-color: lightblue")
         else:
             self.setStyleSheet("")
 

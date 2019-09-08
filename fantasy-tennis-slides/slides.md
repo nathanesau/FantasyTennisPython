@@ -8,15 +8,6 @@ paginate: true
 <style scoped>section{background-color:#fff8e1; color:#455a64; text-align:center}, h1{color:#455a64}</style>
 
 
-# Software Development Sensei <br /><br /> Episode 1: "Fantasy Tennis"
-
-![width:300](images/narrow.PNG)
-     
-*Making software development accessible for others*
-
-<!--[github@nathanesau](https://github.com/nathanesau/FantasyTennis)-->
-
----
 # Fantasy Tennis
 
 * A viewer for ATP tennis brackets (github.com/nathanesau/FantasyTennis)

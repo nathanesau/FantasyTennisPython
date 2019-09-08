@@ -5,7 +5,7 @@ theme: sds
 paginate: true
 ---
 <!-- page_number: true -->
-<style scoped>section{background-color:#fff8e1; color:#455a64; text-align:center}, h1{color:#455a64}</style>
+<style scoped>section{background-color:#fff8e1; color:#455a64}, h1{color:#455a64}</style>
 
 
 # Fantasy Tennis

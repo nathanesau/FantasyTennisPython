@@ -9,7 +9,7 @@ Interactive Draw Editor written in Python. Data here if you don't want to manual
 
 ## Screenshots
 
-![](https://raw.githubusercontent.com/nathanesau/FantasyTennis/master/screenshots/aug30.PNG)
+![](https://raw.githubusercontent.com/nathanesau/FantasyTennis/master/fantasy-tennis-slides/images/fantasy-tennis.png)
 
 DB shown below:
 
